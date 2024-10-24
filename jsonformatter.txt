@@ -1,0 +1,71 @@
+Scenario
+{
+  Scenario_1
+  { 
+    "Start_Time_Delay_Secs" "10.0"
+    Step_1
+    {
+      "Time_Offset_Secs" "0.0"
+      SlewCommand
+      {
+        Penzias
+        {
+          "Az" "205"
+          "El" "1.5"
+        }
+      }
+      
+    }
+    Step_2
+    {
+      "Time_Offset_Secs" "14.5"
+      TransmitCommand
+      {
+        Penzias
+        {
+          "Waveform" "Waveform_A"
+          "Num_Pulses" "1"
+          "Repetition_Count" "250"
+        }
+      }
+    }
+   Step_3
+    {
+      "Time_Offset_Secs" "54.5"
+      TransmitCommand
+      {
+        Penzias
+        {
+          "Waveform" "Waveform_1"
+          "Num_Pulses" "1"
+          "Repetition_Count" "250"
+        }
+      }
+    }
+    
+  }
+}
+
+Waveforms
+{
+  Waveform_A
+  {
+    "Pulsewidth_sec"     "2"
+    "Amp"                "1"
+    "Bandwidth_MHz"      "10"
+    "Phase_Offsec_psec"  "0"
+    "Offsets_Mhz"        "0"
+    "Sample_Per_Chip"    "1"
+    "Gold_Code_Index"    "0"
+  }
+    Waveform_B
+  {
+    "Pulsewidth_sec"     "2"
+    "Amp"                "1"
+    "Bandwidth_MHz"      "10"
+    "Phase_Offsec_psec"  "0"
+    "Offsets_Mhz"        "0"
+    "Sample_Per_Chip"    "1"
+    "Gold_Code_Index"    "0"
+  }
+}
