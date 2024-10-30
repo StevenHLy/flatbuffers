@@ -1,0 +1,44 @@
+c1 = [];
+c2 = [];
+c3 = [];
+br = 6950;
+a = 1;
+
+while a < 251
+
+    %b1 = 13 + 1.5*((2*(rand(a/a)))-1);
+    %b2 = 6950 + 30*((2*(rand(a/a)))-1);
+    %b3 = a;
+
+    b1 = round(21 + 1*((2*(rand(a/a)))-1),4);
+    b2 = round(6950 + 30*((2*(rand(a/a)))-1),4);
+    b3 = a;
+
+
+    c1 = [b1, b2, b3, br];
+
+    b4 = round(21 + 1*((2*(rand(a/a)))-1),4);
+    b5 = round(6950 + 30*((2*(rand(a/a)))-1),4);
+    b6 = a;
+
+    c2 = [b4, b5, b6, br];
+
+    b7 = round(21 + 1*((2*(rand(a/a)))-1),4);
+    b8 = round(6950 + 30*((2*(rand(a/a)))-1),4);
+    b9 = a;
+
+    c3 = [b7, b8, b9, br];
+
+    cagg = [c1, c2, c3];
+
+    fwrite(t, cagg(:), "uint8");
+
+    %writematrix(c1, 'Dish1SampleDataTest.txt')
+    %writematrix(c2, 'Dish2SampleDataTest.txt')
+    %writematrix(c3, 'Dish3SampleDataTest.txt')
+
+    pause(0.2);
+
+    a = a +1;
+
+end 
