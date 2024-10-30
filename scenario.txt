@@ -1,0 +1,418 @@
+Blding142Demo
+{
+   Scenarios
+   {
+      Scenario_1
+      {
+         "Start_Time_Delay_Secs" "10.0"
+
+         Step_1
+         {
+            "Time_Offset_Secs" "0.0"
+
+            SlewCommand
+            {
+               Penzias
+               {
+                  "Azimuth_Degrees"   "205"
+                  "Elevation_Degrees" "1.5"
+               }
+            }
+         }
+
+         Step_2
+         {
+            "Time_Offset_Secs" "14.75"
+
+            TransmitCommand
+            {
+               Penzias
+               {
+                  "Waveform"         "Waveform_A"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }  
+         }
+         Step_3
+         {
+            "Time_Offset_Secs" "15.75"
+            
+            SlewCommand
+            {
+               Penzias
+               {
+                  "Azimuth_Degrees"   "210"
+                  "Elevation_Degrees" "3.0"
+               }
+            }
+         }
+
+         Step_4
+         {
+            "Time_Offset_Secs" "17.25"
+            
+            SlewCommand
+            {
+               Penzias
+               {
+                  "Azimuth_Degrees"   "205"
+                  "Elevation_Degrees" "1.5"
+               }
+            }
+         }
+
+         Step_5
+         {
+            "Time_Offset_Secs" "19.75"
+
+            TransmitCommand
+            {
+               Penzias
+               {
+                  "Waveform"         "Waveform_B"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }              
+         }
+
+         Step_6
+         {
+            "Time_Offset_Secs" "24.75"
+
+            TransmitCommand
+            {
+               Penzias
+               {
+                  "Waveform"         "Waveform_A"
+                  "Num_Pulses"       "3"
+                  "Repetition_Count" "250"
+               }
+            }                          
+         }
+
+         Step_7
+         {
+            "Time_Offset_Secs" "29.75"
+            
+            SlewCommand
+            {
+               Wilson
+               {
+                  "Azimuth_Degrees"   "205"
+                  "Elevation_Degrees" "1.5"
+               }
+            }
+         }
+
+         Step_8
+         {
+            "Time_Offset_Secs" "44.5"
+            
+            TransmitCommand
+            {
+               Penzias
+               {
+                  "Waveform"         "Waveform_A"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }                          
+
+            TransmitCommand
+            {
+               Wilson
+               {
+                  "Waveform"         "Waveform_E"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }                          
+         }
+
+         Step_9
+         {
+            "Time_Offset_Secs" "45.5"
+            
+            SlewCommand
+            {
+               Penzias
+               {
+                  "Azimuth_Degrees"   "210"
+                  "Elevation_Degrees" "3.0"
+               }
+            }
+         }
+
+         Step_10
+         {
+            "Time_Offset_Secs" "47.0"
+
+            SlewCommand
+            {
+               Penzias
+               {
+                  "Azimuth_Degrees"   "205"
+                  "Elevation_Degrees" "1.5"
+               }
+            }
+         }
+
+         Step_11
+         {
+            "Time_Offset_Secs" "49.5"
+            
+            TransmitCommand
+            {
+               Penzias
+               {
+                  "Waveform"         "Waveform_B"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }                          
+
+            TransmitCommand
+            {
+               Wilson
+               {
+                  "Waveform"         "Waveform_E"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }                          
+         }
+
+         Step_12
+         {
+            "Time_Offset_Secs" "54.5"
+            
+            TransmitCommand
+            {
+               Penzias
+               {
+                  "Waveform"         "Waveform_A"
+                  "Num_Pulses"       "3"
+                  "Repetition_Count" "250"
+               }
+            }                          
+
+            TransmitCommand
+            {
+               Wilson
+               {
+                  "Waveform"         "Waveform_E"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }                          
+         }
+
+         Step_13
+         {
+            "Time_Offset_Secs" "59.5"
+            
+            SlewCommand
+            {
+               Dickie
+               {
+                  "Azimuth_Degrees"   "205"
+                  "Elevation_Degrees" "1.5"
+               }
+            }
+         }
+
+         Step_14
+         {
+            "Time_Offset_Secs" "74.25"
+            
+            TransmitCommand
+            {
+               Penzias
+               {
+                  "Waveform"         "Waveform_A"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }                          
+
+            TransmitCommand
+            {
+               Wilson
+               {
+                  "Waveform"         "Waveform_E"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }  
+
+            TransmitCommand
+            {
+               Dickie
+               {
+                  "Waveform"         "Waveform_E"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }                          
+         }
+
+         Step_15
+         {
+            "Time_Offset_Secs" "75.25"
+            
+            SlewCommand
+            {
+               Penzias
+               {
+                  "Azimuth_Degrees"   "210"
+                  "Elevation_Degrees" "3.0"
+               }
+            }
+         }
+
+         Step_16
+         {
+            "Time_Offset_Secs" "76.75"
+            
+            SlewCommand
+            {
+               Penzias
+               {
+                  "Azimuth_Degrees"   "205"
+                  "Elevation_Degrees" "1.5"
+               }
+            }
+         }
+
+         Step_17
+         {
+            "Time_Offset_Secs" "79.25"
+            
+            TransmitCommand
+            {
+               Penzias
+               {
+                  "Waveform"         "Waveform_B"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }                          
+
+            TransmitCommand
+            {
+               Wilson
+               {
+                  "Waveform"         "Waveform_E"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }  
+
+            TransmitCommand
+            {
+               Dickie
+               {
+                  "Waveform"         "Waveform_E"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }                          
+         }
+
+         Step_18
+         {
+            "Time_Offset_Secs" "84.25"
+            
+            TransmitCommand
+            {
+               Penzias
+               {
+                  "Waveform"         "Waveform_A"
+                  "Num_Pulses"       "3"
+                  "Repetition_Count" "250"
+               }
+            }                          
+
+            TransmitCommand
+            {
+               Wilson
+               {
+                  "Waveform"         "Waveform_E"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }  
+
+            TransmitCommand
+            {
+               Dickie
+               {
+                  "Waveform"         "Waveform_E"
+                  "Num_Pulses"       "1"
+                  "Repetition_Count" "250"
+               }
+            }                          
+         }
+      }
+   }
+
+   Waveforms
+   {
+      Waveform_A
+      {
+         "Pulsewidth_usec"   "2"
+         "Amp"               "1"
+         "Bandwidth_MHz"     "10"
+         "Phase_Offset_psec" "0"
+         "Offset_MHz"        "0"
+         "Samples_Per_Chip"  "1"
+         "Gold_Code_Index"   "0"
+      }
+
+      Waveform_B
+      {
+         "Pulsewidth_usec"   "4"
+         "Amp"               "1"
+         "Bandwidth_MHz"     "10"
+         "Phase_Offset_psec" "0"
+         "Offset_MHz"        "0"
+         "Samples_Per_Chip"  "1"
+         "Gold_Code_Index"   "0"         
+      }
+
+      Waveform_C
+      {
+         "Pulsewidth_usec"   "10"
+         "Amp"               "1"
+         "Bandwidth_MHz"     "10"
+         "Phase_Offset_psec" "0"
+         "Offset_MHz"        "0"
+         "Samples_Per_Chip"  "1"
+         "Gold_Code_Index"   "0"         
+      }
+
+      Waveform_D
+      {
+         "Pulsewidth_usec"   "20"
+         "Amp"               "1"
+         "Bandwidth_MHz"     "10"
+         "Phase_Offset_psec" "0"
+         "Offset_MHz"        "0"
+         "Samples_Per_Chip"  "1"
+         "Gold_Code_Index"   "0"         
+      }
+
+      Waveform_E
+      {
+         "Pulsewidth_usec"   "2"
+         "Amp"               "0"
+         "Bandwidth_MHz"     "10"
+         "Phase_Offset_psec" "0"
+         "Offset_MHz"        "0"
+         "Samples_Per_Chip"  "1"
+         "Gold_Code_Index"   "0"         
+      }
+   }
+}
