@@ -1,0 +1,10 @@
+The command string to control the radars:
+command = type + "; " + id + "; " + channels + "; " + freq + "; " + az + "; " + el + "; " + mode;
+
+Here are the definitions for each variable:
+type: 0 = Transmitter, 1 = Receiver
+id: 1 = Dickie (129.218.156.132), 2 = Penzias (129.218.156.182), 3 = Wilson (129.218.156.130)
+channels: 0 = Horizontal, 1 = Vertical, 2 = Dual pole
+freq: transmit/receive center frequency
+az/el: radar position
+mode: 0 = point-and-shoot, 1 = sweep, 2 = solar cal
