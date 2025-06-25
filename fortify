@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Set your Fortify build ID and output FPR name
+BUILD_ID="mybuild"
+FPR_FILE="mybuild.fpr"
+
+# Step 1: Create the filter file (excludes everything under DefaultAsevSnapshot)
+cat <<EOF > exclude.flt
+-DefaultAsevSnapshot/**
+EOF
+
+# Step 2: Run the Fortify scan with the filter
+sourceanalyzer -b "$BUILD_ID" -scan -filter exclude.flt -f "$FPR_FILE"
