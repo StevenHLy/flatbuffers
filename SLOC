@@ -1,0 +1,59 @@
+SLOC : 
+generate a sloc report and put it into the load
+that initial capability would give us the rudimentary ability to see the size of the source code that generated the load.
+long term there are other improvements we'd like to make to that.  
+basically i believe it would be possibly to collect the slocs per file per commit (to the dev branch).  doing so would then allow us to meet a variety of different asks/use cases for slocs.
+for instance we'd be able to filter by component, data service, file type, etc.  gaining the ability to do that would increase our ability to produce BOE (basis of estimates)
+
+additionally we'd be able to spot SLOC trends over time
+ 
+anyway, step 1 of this work would be to write up a roadmap for these improvements to the product.  
+and once that roadmap is in place, then we could define a series of milestones and then tune sprint goals towards those milestones.  what do you think of all this?
+Create a roadmap for "SLOC Automation"
+Milestone 1...update sms build to add SLOC report to each load
+ Create a software design for milestone 1
+Describe appropriate maven stage where this would occur
+Describe how to organize the SLOC repoprt within the load
+the ucc-g tool will place the output file wherever you want it to go
+ 
+the first obstacle may be getting ucc-g to be available on moncloud.  
+i believe all scis were instructed to use the ucc-g from joe cook's home area...not sure why.  perhaps a licensing issue?  not sure if/how we can get it on monclouds.  if it is not already there, then i think we have a few options...
+locate it in artifactory
+upload it to artifactory ourselves
+
+----------------------------------------
+Software Design:
+1/Task Description
+
+2/Software Design Details:
+
+Description of the intended software change
+What Components/Data Services/Libraries are impacted?
+Will any new classes be added?
+Will any refactoring occur as part of this task?
+Roadmap
+Describe the concrete steps that will take the task from the current state to completion
+Comprised of mini-milestones (a time estimate at each step would be helpful)
+Inch-stone steps can help drive the JIRA stories and portray accurate picture of ETC
+Artifacts
+UML, block diagrams, class diagrams, sequence diagrams
+Create a folder in Teams -> Software Design Review -> C45 -> SPY7-XXX (SCR)
+Attach output directly in slide deck
+Leave source files in Teams folder
+
+3/Test Plan:
+Describe how to prove success
+Automated tests
+L1 tests – unit tests
+L2 tests – test of component through its public API 
+Existing tests leveraged?
+Test coverage expected?
+Desktop test
+Procedure to follow to demonstrate capability
+Test shot
+Description (if necessary) – where, when, who, what?
+Procedure and objectives of the test
+
+4/Estimate of Complexity
+
+
