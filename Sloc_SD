@@ -1,0 +1,594 @@
+Got it—here’s a crisp, practical plan you can drop into your design template. I used your terms (sms repo, moncloud, ucc-g, “load”) and focused Milestone 1 on wiring SLOC into the build; later milestones add per-file/per-commit history, filtering, and trends for BOEs.
+
+SLOC Automation — Roadmap
+
+Vision
+
+Provide trustworthy SLOC metrics that:
+	•	ship with every load (artifact),
+	•	can be filtered by component/data service/file type,
+	•	and show trends over time to support BOE and governance.
+
+Milestones (with exit criteria)
+
+Milestone 1 – Add SLOC report to each load (MVP)
+	•	Build generates a UCC-g report and embeds it inside the load artifact.
+	•	Report includes repo-wide totals and per-file breakdown.
+	•	CI publishes the report as a build artifact.
+	•	✅ Exit: every successful build of dev and release branches includes /metrics/sloc/* inside the load.
+
+Milestone 2 – Per-file SLOC per commit (to dev)
+	•	CI job runs on every commit to dev, producing per-file SLOC with commit metadata.
+	•	Persist results to durable storage (e.g., Artifactory raw, S3 bucket, or a tiny Postgres table).
+	•	✅ Exit: we can query SLOC by commit/file/component for any dev commit.
+
+Milestone 3 – Filtering & BOE support
+	•	Add component/data-service/file-type tags (via mapping file or folder conventions).
+	•	Provide simple CLI/SQL/notebook examples to aggregate by tag.
+	•	✅ Exit: produce a BOE-ready CSV for a chosen component over a time window in <1 min.
+
+Milestone 4 – Trends & dashboards
+	•	Daily/commit-level trend series; visualize via Grafana/Looker/PowerBI.
+	•	Basic alerts for sudden SLOC spikes per component.
+	•	✅ Exit: dashboard renders SLOC trends for repo and top N components over last 90 days.
+
+⸻
+
+Milestone 1 — Software Design
+
+Scope
+
+Generate a SLOC report during the Maven build of the sms multi-module repo and package it into the load. Use UCC-g as the SLOC engine.
+
+Inputs
+	•	Source tree at build time.
+	•	UCC-g binary (see “Distribution/moncloud options” below).
+	•	Exclude patterns: target/, build/, .git/, node_modules/, IDE dirs, generated sources.
+
+Processing
+	1.	Invoke UCC-g once from the repo root (covers all modules).
+	2.	Write output to ${project.build.directory}/ucc/ (CSV + summary).
+	3.	Copy that directory into the load’s /metrics/sloc/ path during packaging.
+	4.	Attach the CSV (or zip) as a CI artifact for quick download.
+
+Outputs
+	•	Inside the load:
+	•	/metrics/sloc/summary.txt (overall counts)
+	•	/metrics/sloc/results.csv (per-file)
+	•	Optional: /metrics/sloc/manifest.json (metadata: repo, branch, commit, build time)
+	•	CI artifacts:
+	•	target/ucc/** and/or target/ucc-report.zip
+
+Error Handling & Build Policy
+	•	If UCC-g is missing: fail the SLOC step but do not fail the whole build (configurable).
+	•	If UCC-g exits non-zero: log stderr, emit an empty placeholder under /metrics/sloc/ with an error note.
+	•	Add a -DfailOnSlocError=true|false knob (default false for Milestone 1).
+
+Directory Layout (inside the load)
+/metrics/
+  /sloc/
+    results.csv
+    summary.txt
+    manifest.json
+
+Maven Integration
+
+Best Stage
+	•	prepare-package is ideal: generate reports before the load is assembled so the files get included.
+	•	Optionally run again at verify to attach a standalone artifact in CI (without affecting the packaged load).
+
+Root pom.xml (packaging pom) — minimal, runnable example
+<properties>
+  <!-- Where ucc-g is; prefer an env var so CI/moncloud can vary -->
+  <ucc.cmd>${env.UCC_CMD}</ucc.cmd>
+  <ucc.out.dir>${project.build.directory}/ucc</ucc.out.dir>
+
+  <!-- Tune for your repo -->
+  <ucc.include.ext>c,cc,cpp,h,hpp,java,py,xml,html,js,ts,css,fbs,yaml,yml</ucc.include.ext>
+  <ucc.exclude.dirs>.git;.idea;target;build;node_modules;out;.gradle;.vscode</ucc.exclude.dirs>
+
+  <!-- Fail policy (Milestone 1 default: false) -->
+  <failOnSlocError>false</failOnSlocError>
+</properties>
+
+<build>
+  <plugins>
+    <!-- 1) Generate SLOC before packaging -->
+    <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>exec-maven-plugin</artifactId>
+      <version>3.5.0</version>
+      <executions>
+        <execution>
+          <id>sloc-generate</id>
+          <phase>prepare-package</phase>
+          <goals><goal>exec</goal></goals>
+          <configuration>
+            <executable>${ucc.cmd}</executable>
+            <workingDirectory>${session.executionRootDirectory}</workingDirectory>
+            <arguments>
+              <argument>-dir</argument>
+------
+Task Description :
+The goal of this task is to integrate automated SLOC (Source Lines of Code) reporting into the sms build process so that every produced load contains an embedded SLOC report. This provides the initial capability to measure and package the size of the source code used to generate the load.
+
+Objectives
+	•	Invoke UCC-g during the Maven build to generate SLOC metrics.
+	•	Capture both summary (overall counts) and detailed per-file results.
+	•	Organize the generated reports under /metrics/sloc/ within the load artifact.
+	•	Ensure reports are also archived as CI build artifacts for quick access.
+	•	Provide flexibility to run the SLOC step without failing the entire build if UCC-g is unavailable (configurable fail policy).
+
+Scope
+	•	Apply at the root of the sms multi-module repository, covering all modules in a single pass.
+	•	Exclude irrelevant/generated directories (e.g., .git/, target/, node_modules/).
+	•	Support common language extensions used in the repo (C/C++, Java, Python, FlatBuffers, XML, etc.).
+	•	Integrate into the Maven lifecycle at the prepare-package phase, ensuring results are included in the load prior to final packaging.
+
+Deliverables
+	•	A /metrics/sloc/ folder inside each load artifact containing:
+	•	results.csv — per-file SLOC details.
+	•	summary.txt — overall SLOC totals.
+	•	manifest.json — metadata including repo, branch, commit ID, and build timestamp.
+	•	CI pipeline updates to archive target/ucc/** as build artifacts.
+
+Constraints
+	•	UCC-g availability:
+	•	Must be accessible on moncloud build nodes.
+	•	If not present, options include:
+	•	Locate existing binary in Artifactory.
+	•	Upload and host the binary in Artifactory ourselves.
+	•	Licensing considerations: confirm whether the UCC-g binary must come from Joe Cook’s home area or if redistribution is permissible.
+
+Exit Criteria
+	•	Every build of the dev branch (and release branches) embeds a /metrics/sloc/ directory in the load artifact.
+	•	Build logs clearly show UCC-g execution and location of outputs.
+	•	Reports are accessible both inside the load and as separate CI artifacts.
+2/
+
+2 / Software Design Details — SLOC Automation (Milestone 1: put SLOC in every load)
+
+Description of the intended software change
+
+Add an automated SLOC (Source Lines of Code) step to the sms multi-module Maven build that:
+	1.	runs UCC-g once from the repo root during the prepare-package phase,
+	2.	writes reports to target/ucc/, and
+	3.	embeds the reports inside the load under /metrics/sloc/ so every build artifact carries its own SLOC evidence.
+
+A lightweight manifest.json (commit, branch, build time, tool version, excludes) will be generated so downstream consumers can trace the report back to the exact load and source tree.
+
+Failure policy (M1): if UCC-g is not present, we don’t fail the build by default (config switchable). We still place a placeholder note in /metrics/sloc/ indicating why SLOC is missing.
+
+⸻
+
+What Components / Data Services / Libraries are impacted?
+	•	Build system (Maven)
+	•	Root pom.xml (packaging pom): add exec-maven-plugin to call ucc-g at prepare-package.
+	•	Add maven-resources-plugin (or assembly) to copy SLOC outputs into the load.
+	•	Optional: git-commit-id-plugin to populate manifest.json with commit metadata.
+	•	Packaging (“load”)
+	•	Load assembly/packaging descriptor updated to include /metrics/sloc/**.
+	•	CI pipeline (e.g., Jenkins/GitLab)
+	•	Provide UCC_CMD environment variable path.
+	•	Archive target/ucc/** and (optionally) /metrics/sloc/** as build artifacts.
+	•	Binary distribution
+	•	moncloud nodes must have ucc-g available. If not, we’ll host it in Artifactory (see Options below).
+	•	Application runtime / data services: No runtime impact. This is build-time only.
+
+⸻
+
+Will any new classes be added?
+	•	No application classes are required for Milestone 1.
+	•	Optional helper (if we avoid extra plugins): a tiny script (Bash/Python/Groovy) to write manifest.json from env/Git—kept under build-tools/ and invoked by Maven. (Default plan uses git-commit-id-plugin + resource filtering instead of adding code.)
+
+⸻
+
+Will any refactoring occur as part of this task?
+	•	Centralize exclude patterns (e.g., .git/, target/, node_modules/, generated dirs) in the root POM property so all modules share the same rules.
+	•	If multiple modules currently assemble the “load,” normalize to one packaging path so /metrics/sloc/ lands consistently.
+	•	Optional: introduce a sloc Maven profile so the step can be toggled on/off (e.g., -Psloc in CI).
+
+⸻
+
+Roadmap
+
+Milestone 1 — “SLOC in every load” (this change)
+
+Objective: Every successful build embeds /metrics/sloc/ containing results.csv, summary.txt, and manifest.json.
+
+Mini-milestones & inch-stones (rough effort; adjust to team velocity)
+	1.	Provision UCC-g on moncloud (0.5–1.5 d)
+	•	Confirm whether ucc-g is already on moncloud or must be sourced from Joe Cook’s home area.
+	•	If absent:
+	•	Option A: Locate in Artifactory. (0.5 d)
+	•	Option B: Upload to Artifactory ourselves (with license review). (0.5–1 d)
+	•	CI/agents: set UCC_CMD env var (Windows & Linux paths).
+	•	Exit: ucc-g --version succeeds on build nodes.
+	2.	Add Maven exec step (prepare-package) (0.5 d)
+	•	Root pom.xml: exec-maven-plugin running from ${session.executionRootDirectory}.
+	•	Properties: includes, excludes, ucc.out.dir=target/ucc.
+	•	Exit: target/ucc/results.csv and summary.txt produced locally.
+	3.	Embed into the load (0.5 d)
+	•	Add maven-resources-plugin (or augment assembly descriptor) to copy target/ucc/** into /metrics/sloc/ of the load.
+	•	Exit: Built load contains /metrics/sloc/*.
+	4.	Add manifest.json (0.5 d)
+	•	Use git-commit-id-plugin to fetch commit, branch, timestamp; filter a template into manifest.json.
+	•	Exit: manifest.json present and accurate in both target/ucc/ and /metrics/sloc/.
+	5.	CI wiring & publishing (0.5 d)
+	•	Add UCC_CMD to CI, archive artifacts (target/ucc/**), opt-in profile if desired (-Psloc).
+	•	Exit: CI job exposes SLOC files and build pages link to them.
+	6.	Validation & docs (0.5 d)
+	•	Verify excludes (no generated code counted), spot-check counts for a few modules, document usage and troubleshooting.
+	•	Exit: One-page runbook in Teams folder.
+
+Total (M1): ~3–5 engineering days depending on moncloud/Artifactory setup.
+
+Future milestones (for context; not part of this change)
+	•	M2: Per-file SLOC per commit to dev (2–4 d)
+	•	Capture SLOC on every dev commit; persist CSVs (Artifactory raw or S3) keyed by SHA.
+	•	M3: Filtering & BOE support (3–5 d)
+	•	Introduce component/data-service/file-type mappings and aggregation scripts/SQL.
+	•	M4: Trends & dashboard (3–5 d)
+	•	Time-series rollups, Grafana/PowerBI dashboard, spike alerts.
+
+⸻
+
+Describe the concrete steps (from current state to completion)
+	1.	Decide on UCC-g distribution path (moncloud)
+	•	If available via Joe Cook’s area, document path. Otherwise: host ucc-g tar/zip in Artifactory and standardize UCC_CMD.
+	2.	Root POM updates
+	•	Add properties (ucc.cmd, includes/excludes, ucc.out.dir).
+	•	Add exec-maven-plugin bound to prepare-package to run ucc-g.
+	3.	Output organization
+	•	Standardize target/ucc/ → copy to load /metrics/sloc/ via maven-resources-plugin (or assembly fileset).
+	4.	Metadata
+	•	Add git-commit-id-plugin and resource filtering to create manifest.json.
+	5.	CI
+	•	Set UCC_CMD, add artifact archiving of target/ucc/**, ensure profile flags if used.
+	6.	Verify & sign off
+	•	Perform a dry run on dev, confirm /metrics/sloc/ is present and sensible.
+
+Acceptance criteria (M1):
+	•	For any dev build, the load contains /metrics/sloc/results.csv, summary.txt, manifest.json.
+	•	CI job exposes the same under artifacts.
+	•	Missing tool scenarios don’t break the build (default), and leave a placeholder note.
+
+⸻
+
+Artifacts
+
+Diagrams (attach to slide deck; source files in Teams folder)
+
+Place sources (PlantUML) under:
+
+Teams ➜ Software Design Review ➜ C45 ➜ SPY7-XXX (SCR) ➜ artifacts/
+1) Block Diagram (PlantUML)
+@startuml
+skinparam shadowing false
+rectangle "sms repo (multi-module)" as Repo
+rectangle "Maven (prepare-package)" as Maven
+rectangle "UCC-g" as UCC
+folder "target/ucc" as UOut
+folder "Load Artifact" as Load {
+  folder "metrics/sloc" as Metrics
+}
+cloud "CI (Jenkins/GitLab)" as CI
+
+Repo --> Maven
+Maven --> UCC : exec-maven-plugin
+UCC --> UOut : results.csv\nsummary.txt\nmanifest.json
+Maven --> Load : copy /metrics/sloc/**
+UOut --> Metrics
+Load --> CI : archive artifact(s)
+@enduml
+2) Sequence Diagram (PlantUML)
+@startuml
+actor Developer
+participant Maven
+participant "UCC-g" as UCC
+participant "Load Assembler" as Asm
+participant CI
+
+Developer -> Maven : mvn package
+Maven -> UCC : run ucc-g (prepare-package)
+UCC --> Maven : results in target/ucc/*
+Maven -> Asm : include /metrics/sloc/** in load
+Asm --> Maven : load packaged
+Maven -> CI : publish artifacts
+@enduml
+3) (Optional) Class Diagram
+Not applicable for runtime code (build-time only). If a helper script is added, include a 1-class sketch and keep it in artifacts/.
+
+⸻
+
+Describe appropriate Maven stage & how to organize the SLOC report
+
+Stage: prepare-package (ensures SLOC exists before the load is assembled).
+Organization inside the load:
+/metrics/sloc/
+  results.csv          # per-file SLOC details
+  summary.txt          # repo totals
+  manifest.json        # metadata: commit, branch, build time, ucc version, excludes
+{
+  "repo": "${project.artifactId}",
+  "branch": "${git.branch}",
+  "commit": "${git.commit.id.abbrev}",
+  "buildTime": "${maven.build.timestamp}",
+  "uccCommand": "${env.UCC_CMD}",
+  "excludes": "${ucc.exclude.dirs}"
+}
+Notes on ucc-g availability on moncloud
+	•	If not already installed/approved:
+	1.	Locate in Artifactory (preferred if it already exists).
+	2.	Upload to Artifactory ourselves (confirm license/redistribution).
+	•	Standardize path via UCC_CMD in CI/agent envs (e.g., /opt/ucc/ucc-g or C:\tools\ucc\ucc-g.exe).
+	•	Keep an internal README noting the source and checksum of the binary.
+
+⸻
+
+Risks & Mitigations
+	•	Tool availability/licensing → validate early; keep an Artifactory fallback.
+	•	Counting generated code → maintain excludes; periodically review.
+	•	Build failures due to tool exit → default failOnSlocError=false; escalate only in nightly jobs.
+	•	Large repos / runtime → support -threads if available; cache excludes.
+
+⸻
+
+What to put in Teams
+Teams/Software Design Review/C45/SPY7-XXX (SCR)/
+  ├─ SCR Slide Deck.pptx  (attach rendered diagrams and summary)
+  └─ artifacts/
+      ├─ block_diagram.puml
+      ├─ sequence_sloc.puml
+      ├─ manifest_template.json
+      └─ pom_snippets_m1.xml
+Attach the diagrams directly in the slide deck; keep the source files (.puml, templates, POM snippets) in the artifacts/ folder.
+
+⸻
+
+If you want, I can also drop in the exact POM snippets (exec/resources/assembly + git-commit-id-plugin) tailored to your current load module so you can paste and build right away.
+
+3 / Test Plan — SLOC Automation (Milestone 1: SLOC in every load)
+
+How we’ll prove success (Acceptance checks)
+	1.	Every successful build of dev and release branches contains /metrics/sloc/ inside the load with:
+	•	results.csv (per-file rows present, non-empty),
+	•	summary.txt (totals present),
+	•	manifest.json (commit, branch, timestamp, tool path).
+	2.	CI artifacts also include target/ucc/** (or zipped equivalent).
+	3.	Build logs show ucc-g invocation path and exit code 0 (or placeholder created when allowed to be non-fatal).
+	4.	Excludes work: files from target/, .git/, node_modules/ are not counted.
+	5.	Idempotence: running the build twice without source changes yields identical SLOC outputs (hash match) except for timestamps in manifest.json.
+
+⸻
+
+Automated tests
+
+L1 — Unit tests
+
+(Target: helper pieces around the build; M1 has minimal runtime code)
+	•	Manifest generator unit tests (if using a small helper script/tool):
+	•	Validate JSON schema, required fields, timestamp format, branch/commit injection.
+	•	Negative: missing env vars → sensible defaults/messages.
+	•	Exclude patterns unit tests (if centralized in a small parser/validator):
+	•	Confirm we compile exclude globs into the exact ucc-g CLI format.
+	•	CSV sanity unit tests (lightweight parser to smoke-check UCC output if we post-process):
+	•	Verify headers (File, Language, SLOC, …) and numeric fields parse.
+
+Coverage expectation (L1): 80%+ for any helper code introduced (manifest/exclude handling).
+
+L2 — Component/API tests (build integration tests)
+
+Use the Maven Invoker Plugin (or Gradle TestKit equivalent) to run black-box builds on small fixture projects.
+
+Strategy: Stub ucc-g with a deterministic fake (ucc-g-stub) to avoid tool licensing and to produce golden outputs.
+	•	Fixtures:
+	•	fixture-hello/ (1–2 source files),
+	•	fixture-multi-module/ (two modules, one excluded dir),
+	•	fixture-generated-code/ (simulated target/ content to ensure exclusion).
+	•	Test cases:
+	1.	Happy path
+	•	UCC_CMD=ucc-g-stub → build runs at prepare-package.
+	•	Assert load contains /metrics/sloc/{results.csv,summary.txt,manifest.json}.
+	•	Compare results.csv to a golden file.
+	2.	Excludes enforced
+	•	Include files under target/ and .git/; verify they do not appear in results.csv.
+	3.	Missing tool (non-fatal)
+	•	UCC_CMD unset, -DfailOnSlocError=false.
+	•	Assert build succeeds and a placeholder note exists under /metrics/sloc/.
+	4.	Missing tool (fatal)
+	•	UCC_CMD unset, -DfailOnSlocError=true.
+	•	Assert build fails with clear error message.
+	5.	Idempotence
+	•	Build twice; hash results.csv and summary.txt identical (excluding manifest timestamp).
+	6.	Windows/Linux path robustness
+	•	Simulate Windows path in env (backslashes) and Unix path; assert exec args constructed correctly.
+
+What the stub does:
+ucc-g-stub reads the project root, finds files by extension, emits fixed counts based on line markers (e.g., //SLOC: comments) so results are deterministic.
+
+Coverage expectation (L2): 90%+ of the build logic pathways (happy, missing tool, excludes, attach/copy).
+
+Existing tests leveraged?
+	•	Existing load packaging tests: extend them to assert /metrics/sloc/** is included.
+	•	Existing CI pipeline smoke tests: add artifact presence checks.
+
+⸻
+
+Desktop test (manual verification)
+
+Objective: Demonstrate end-to-end capability with the real ucc-g on a developer workstation.
+
+Prereqs:
+	•	UCC_CMD points to a valid ucc-g binary.
+	•	Repo synced to the latest dev.
+Procedure:
+	1.	Clean & build:
+mvn -DskipTests -Psloc clean package
+2.	Inspect outputs:
+	•	ls target/ucc/ → verify results.csv, summary.txt, manifest.json.
+	•	Open results.csv and confirm multiple file rows and reasonable totals.
+	3.	Inspect load:
+	•	Unpack the load (jar/zip/tar as appropriate) and verify /metrics/sloc/** exists with the same 3 files.
+	4.	Spot-checks:
+	•	Confirm files under target/ or .git/ are absent from results.csv.
+	•	Confirm manifest.json has expected commit and branch.
+
+Success: All checks pass; SLOC totals roughly match expectations (no obviously huge inflation from generated code).
+
+⸻
+
+CI pipeline tests
+
+Objectives: Regression guard and artifact availability.
+
+Steps:
+	1.	Pipeline sets UCC_CMD on moncloud agent(s).
+	2.	Run mvn -Psloc -DskipTests verify.
+	3.	Archive target/ucc/** and load artifact.
+	4.	Post-build script:
+	•	Validate presence of /metrics/sloc/results.csv inside the load (unzip and check).
+	•	Fail the job if missing.
+
+Metrics to store:
+	•	Hash of results.csv for comparison across runs (basic drift detector).
+	•	Size of results.csv and summary.txt (bytes) to catch accidental truncation.
+
+⸻
+
+Test coverage expected
+	•	Helper code (manifest/exclude): 80%+ line/branch.
+	•	Build integration (Invoker tests): exercise all decision paths; effective coverage 90%+ of plugin configuration and copy/attach logic.
+	•	No requirement to unit test ucc-g itself.
+
+⸻
+
+“Test shot” (demo run) — description & objectives
+
+Where: moncloud build agent (same pool that produces loads).
+When: first green CI build after merging SLOC changes to a feature branch, then dev.
+Who: Build/release engineer + feature owner (you).
+What: Execute a normal pipeline run producing a load with SLOC embedded.
+
+Procedure:
+	1.	Confirm UCC_CMD is set and ucc-g --version works on the agent.
+	2.	Trigger pipeline on branch feature/sloc-m1.
+	3.	After build:
+	•	Download load artifact → verify /metrics/sloc/.
+	•	Download CI artifact target/ucc/**.
+	•	Sanity-read summary.txt totals; spot-check 3–5 representative files in results.csv.
+	•	Compare result size/hashes with a second run (idempotence).
+	4.	Record outcomes (screenshots + notes) in Teams SCR folder.
+
+Objectives:
+	•	Prove the exact production path embeds SLOC correctly.
+	•	Establish a baseline SLOC reading for the repo.
+	•	Document any environment quirks (path/permissions) for ucc-g.
+
+⸻
+
+Negative/edge tests (important)
+	•	Malformed extensions list: supply unknown extension → ensure build doesn’t fail; file gets ignored or reported as unknown type.
+	•	Permission error in output dir: simulate unwritable target/ucc/ → expect clear error; placeholder if non-fatal.
+	•	Very large repo subset: run on a submodule with thousands of files to ensure time remains acceptable; if slow, enable -threads and document.
+	•	Non-ASCII file paths: add a file with spaces/unicode; ensure it appears in results.csv.
+
+⸻
+
+Artifacts to produce (and where to store them)
+	•	In Teams ➜ Software Design Review ➜ C45 ➜ SPY7-XXX (SCR):
+	•	TestPlan-SLOC-M1.md (this content, cleaned up).
+	•	Desktop-Checklist.md (step-by-step with screenshots).
+	•	CI-Validation-Script.sh (unzips load and checks /metrics/sloc/**).
+	•	Golden files for Invoker tests: fixtures/**/expected-results.csv.
+	•	Stub tool (if used): build-tools/ucc-g-stub + README.
+
+⸻
+
+Traceability to JIRA (inch-stones → stories)
+	•	JIRA-1: Provision ucc-g on moncloud / Artifactory + env wiring.
+	•	JIRA-2: Add Maven exec step (prepare-package) + excludes.
+	•	JIRA-3: Copy to load /metrics/sloc/**.
+	•	JIRA-4: Add manifest.json generation.
+	•	JIRA-5: CI artifact archiving & validation script.
+	•	JIRA-6: Invoker tests with stub; golden outputs; negative tests.
+	•	JIRA-7: Desktop + CI “test shot” sign-off; SCR updates.
+4 / Estimate of Complexity — SLOC Automation (Milestone 1: SLOC in every load)
+
+Overall assessment
+
+Complexity: Low → Low/Medium
+Why: Pure build-time integration (no runtime code paths), limited surface area (root POM + packaging), and well-bounded outputs. Primary uncertainty is tool availability/licensing on moncloud and CI variability.
+
+⸻
+
+Primary complexity drivers
+	•	External tool availability (ucc-g): pathing, licensing, and distribution on moncloud/CI.
+	•	Build topology: ensuring a single execution at root in a multi-module repo and consistent inclusion in the load package.
+	•	Exclusions correctness: keeping generated/build dirs out of counts.
+	•	Cross-platform nuances: Windows vs. Linux path semantics in CI agents.
+	•	Repeatability: deterministic outputs for tests (handled with a stub in CI).
+
+⸻
+
+Scope sizing (Milestone 1 only)
+	•	POM/Build wiring (exec step + copy into load): Low
+	•	Manifest generation (git metadata + filtering): Low
+	•	CI wiring & artifact publishing: Low
+	•	Tooling logistics (moncloud + Artifactory): Low/Medium (most uncertain)
+	•	Validation & docs: Low
+
+Net complexity: Low/Medium (driven up only if moncloud/tool distribution is tricky).
+
+⸻
+
+Effort estimate (engineering)
+
+(These are project estimates, not promises of my future turnaround.)
+	•	Baseline (tool available on agents): ~3–4 engineer-days
+	•	If we must host/distribute ucc-g via Artifactory + approvals: +1–2 engineer-days
+	•	If packaging is non-standard or multiple load paths: +0.5–1 engineer-days
+
+⸻
+
+Story-level sizing (indicative story points)
+	•	JIRA-1: Provision ucc-g on moncloud / Artifactory — 3–5 pts
+	•	JIRA-2: Exec step at prepare-package + excludes — 3 pts
+	•	JIRA-3: Copy /metrics/sloc/** into load — 2 pts
+	•	JIRA-4: manifest.json generation — 2 pts
+	•	JIRA-5: CI artifacts + validation script — 2 pts
+	•	JIRA-6: Invoker tests + stub + goldens — 5 pts
+	•	JIRA-7: Desktop & CI “test shot” sign-off + SCR updates — 2 pts
+
+Total: ~19–21 pts (small feature)
+
+⸻
+
+Risks & mitigations (impact × likelihood)
+
+Assumptions
+	•	ucc-g can be executed headless on moncloud agents.
+	•	We’re allowed to store its binary (or a pointer) in Artifactory if needed.
+	•	The “load” is assembled from the root build (or a known packaging module) where we can inject /metrics/sloc/**.
+	•	Repo layout allows a single top-level run that sees all modules.
+
+⸻
+
+Dependencies
+	•	Tooling: ucc-g binary + path (UCC_CMD), optional git-commit-id-plugin.
+	•	Infrastructure: Artifactory (if distributing binary), CI environment variables and artifact archiving.
+	•	People: Build/DevOps contact for moncloud agent configuration; owner of Joe Cook’s shared location if that remains the sanctioned source.
+
+⸻
+
+Confidence
+	•	70–80% for baseline estimate (tool present).
+	•	60–70% if licensing/distribution needs new approvals.
+
+⸻
+
+What would increase complexity to Medium/High?
+	•	Security review that blocks local execution of ucc-g on agents (requiring containerization or sandboxing).
+	•	Multiple distinct load assembly processes needing per-module injection logic.
+	•	Requirement to fail builds on any SLOC error from day one (tightening error policy increases test matrix).
+
