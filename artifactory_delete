@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+#
+# Delete a Maven artifact version from Nexus or Artifactory
+# Usage:
+#   ./delete-artifact.sh <repoId> <repoUrl> <groupId> <artifactId> <version>
+#
+# Example:
+#   ./delete-artifact.sh nexus-releases http://nexus:8081/repository/maven-releases com.example myartifact 1.0.0
+#
+
+set -e
+
+if [ $# -ne 5 ]; then
+  echo "Usage: $0 <repoId> <repoUrl> <groupId> <artifactId> <version>"
+  exit 1
+fi
+
+REPO_ID=$1
+REPO_URL=$2
+GROUP_ID=$3
+ARTIFACT_ID=$4
+VERSION=$5
+
+# Convert groupId dots to slashes
+GROUP_PATH=$(echo "$GROUP_ID" | tr '.' '/')
+
+# Extract credentials from settings.xml using xmlstarlet
+USERNAME=$(xmlstarlet sel -t -v "/settings/servers/server[id='$REPO_ID']/username" ~/.m2/settings.xml)
+PASSWORD=$(xmlstarlet sel -t -v "/settings/servers/server[id='$REPO_ID']/password" ~/.m2/settings.xml)
+
+if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+  echo "❌ No credentials found for serverId=$REPO_ID in ~/.m2/settings.xml"
+  exit 1
+fi
+
+# Perform delete
+echo "Deleting $GROUP_ID:$ARTIFACT_ID:$VERSION from $REPO_URL ..."
+curl -u "$USERNAME:$PASSWORD" -X DELETE \
+  "$REPO_URL/$GROUP_PATH/$ARTIFACT_ID/$VERSION/" || {
+    echo "❌ Delete failed"
+    exit 1
+}
+
+echo "✅ Successfully deleted $GROUP_ID:$ARTIFACT_ID:$VERSION"
