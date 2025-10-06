@@ -1,0 +1,4 @@
+jfrog rt del "libs-release-local/com/example/app/1.0/app-1.0.jar" --detailed-summary
+jfrog rt del "libs-release-local/com/example/app/1.0/app-1.0.jar" --detailed-summary
+jfrog rt del "libs-release-local/com/example/app/**" --dry-run
+curl -u user:apikey -X DELETE "https://mycompany.jfrog.io/artifactory/libs-release-local/com/example/app/1.0/app-1.0.jar"
