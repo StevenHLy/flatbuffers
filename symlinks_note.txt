@@ -1,0 +1,11 @@
+chmod +x fix_symlinks.sh
+./fix_symlinks.sh /home/steven/folder1
+if you have
+folder1/
+ ├─ data -> /mnt/shared/data
+ └─ config -> ../common/config
+
+ after running
+ folder1/
+ ├─ data/        # real directory copied from /mnt/shared/data
+ └─ config/      # real directory copied from ../common/config
