@@ -1,0 +1,88 @@
+1. Create a file named init.properties
+
+Put it in your project root (same level as your top-level pom.xml):
+# init.properties
+guava.version=33.0.0-jre
+junit.version=5.11.0
+
+2. Configure properties-maven-plugin in your top-level pom.xml
+
+Add this plugin to your <build> section:
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>properties-maven-plugin</artifactId>
+      <version>1.2.1</version>
+      <executions>
+        <execution>
+          <phase>initialize</phase>
+          <goals>
+            <goal>read-project-properties</goal>
+          </goals>
+          <configuration>
+            <files>
+              <file>init.properties</file>
+            </files>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+This loads all properties from init.properties before Maven reads dependencies.
+
+⸻
+
+3. Use those properties in your dependencies
+
+Now you can reference them like normal Maven properties:
+<dependencies>
+  <dependency>
+    <groupId>com.google.guava</groupId>
+    <artifactId>guava</artifactId>
+    <version>${guava.version}</version>
+  </dependency>
+
+  <dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <version>${junit.version}</version>
+    <scope>test</scope>
+  </dependency>
+</dependencies>
+
+⚙️ Notes
+	•	The plugin runs during the initialize phase, before the build starts.
+	•	You can specify multiple files if needed:
+
+  <files>
+  <file>init.properties</file>
+  <file>env.properties</file>
+</files>
+•	You can override properties with -Dproperty=value on the command line.
+
+Put your init.properties file in the root directory of your Maven project, i.e., the same folder as your top-level pom.xml.
+my-project/
+├── pom.xml               ← top-level POM
+├── init.properties       ← properties file (recommended location)
+└── submodule-a/
+    └── pom.xml
+
+Because in the plugin configuration:
+<file>init.properties</file>
+the path is relative to the current module’s base directory.
+So if you define the plugin in your top-level POM, and the file is also there, Maven will find it without any extra path configuration.
+
+If your submodules inherit from the parent POM, they’ll automatically use the properties too (Maven propagates the properties loaded into the parent POM).
+
+⸻
+
+⚙️ If you want to keep it elsewhere
+
+You can also place it in a subfolder — e.g. config/init.properties — as long as you update the path:
+<file>config/init.properties</file>
+
+
+
+
