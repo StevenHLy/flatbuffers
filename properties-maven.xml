@@ -1,0 +1,46 @@
+<build>
+  <plugins>
+    <!-- Load external file -->
+    <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>properties-maven-plugin</artifactId>
+      <version>1.2.1</version>
+      <executions>
+        <execution>
+          <id>load-hello</id>
+          <phase>initialize</phase>
+          <goals>
+            <goal>load-file</goal>
+          </goals>
+          <configuration>
+            <files>
+              <file>${project.basedir}/HELLO.txt</file>
+            </files>
+            <propertyName>hello.content</propertyName>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+
+    <!-- Print the loaded content -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-antrun-plugin</artifactId>
+      <version>3.1.0</version>
+      <executions>
+        <execution>
+          <id>print-hello</id>
+          <phase>validate</phase>
+          <goals>
+            <goal>run</goal>
+          </goals>
+          <configuration>
+            <target>
+              <echo message="HELLO.txt content: ${hello.content}" />
+            </target>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
